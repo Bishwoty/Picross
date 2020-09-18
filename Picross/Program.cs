@@ -1,9 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
 
 namespace Picross {
 	class Program {
@@ -15,13 +11,13 @@ namespace Picross {
 			bool result = false;
 			switch(solveVersion) {
 				case 1:
-					result = Solve1(game);
+					result = Solve1(game, Check);
 					break;
 				case 2:
 					result = Solve2(game, 0, 0);
 					break;
 				case 3:
-					result = Solve3(game);
+					result = Solve1(game, Check2);
 					break;
 			}
 			if(result) {
@@ -81,7 +77,7 @@ namespace Picross {
 			}
 		}
 
-		static bool Solve1(PicrossGrid picross) {
+		static bool Solve1(PicrossGrid picross, Func<PicrossGrid, int, int, int, bool, bool> checkFunc) {
 			bool stuck;
 			do {
 				stuck = true;
@@ -89,8 +85,8 @@ namespace Picross {
 					for(int j = 0; j < picross.Size; j++) {
 						if(picross.Empty(i, j)) {
 							Console.WriteLine($"{i}, {j}");
-							bool tryFill1 = Check(picross, PicrossGrid.FILLED, i, j, true);
-							bool tryX1 = Check(picross, PicrossGrid.X, i, j, true);
+							bool tryFill1 = checkFunc(picross, PicrossGrid.FILLED, i, j, true);
+							bool tryX1 = checkFunc(picross, PicrossGrid.X, i, j, true);
 							bool tryFill2;
 							bool tryX2;
 
@@ -111,8 +107,8 @@ namespace Picross {
 								Console.WriteLine(picross);
 							} else {
 								// Check other dimension
-								tryFill2 = Check(picross, PicrossGrid.FILLED, i, j, false);
-								tryX2 = Check(picross, PicrossGrid.X, i, j, false);
+								tryFill2 = checkFunc(picross, PicrossGrid.FILLED, i, j, false);
+								tryX2 = checkFunc(picross, PicrossGrid.X, i, j, false);
 
 								// Case: Neither option is possible, invalid puzzle
 								if(!tryFill1 && !tryX1) {
@@ -136,7 +132,7 @@ namespace Picross {
 					}
 				}
 			} while(!stuck && !picross.IsValid());
-			return true;
+			return !stuck;
 		}
 
 		static bool Check(PicrossGrid picross, int val, int row, int col, bool checkRow) {
@@ -186,68 +182,6 @@ namespace Picross {
 				throw new System.ArgumentException("Check on non empty cell");
 			}
 		}
-
-		static bool Solve3(PicrossGrid picross) {
-			bool stuck;
-			do {
-				stuck = true;
-				for(int i = 0; i < picross.Size; i++) {
-					for(int j = 0; j < picross.Size; j++) {
-						if(picross.Empty(i, j)) {
-							//Console.WriteLine($"{i}, {j}");
-							bool tryFill1 = Check2(picross, PicrossGrid.FILLED, i, j, true);
-							bool tryX1 = Check2(picross, PicrossGrid.X, i, j, true);
-							bool tryFill2;
-							bool tryX2;
-
-							// Case: Neither option is possible, invalid puzzle
-							if(!tryFill1 && !tryX1) {
-								return false;
-							}
-							// Case: X not possible, must be filled
-							else if(tryFill1 && !tryX1) {
-								picross.Put(i, j, PicrossGrid.FILLED);
-								stuck = false;
-								Console.WriteLine(picross);
-							}
-							// Case: Filled not possible, must be X
-							else if(!tryFill1 && tryX1) {
-								picross.Put(i, j, PicrossGrid.X);
-								stuck = false;
-								Console.WriteLine(picross);
-							} else {
-								// Check other dimension
-								tryFill2 = Check2(picross, PicrossGrid.FILLED, i, j, false);
-								tryX2 = Check2(picross, PicrossGrid.X, i, j, false);
-
-								// Case: Neither option is possible, invalid puzzle
-								if(!tryFill1 && !tryX1) {
-									return false;
-								}
-								// Case: X not possible, must be filled
-								else if(tryFill2 && !tryX2) {
-									picross.Put(i, j, PicrossGrid.FILLED);
-									stuck = false;
-									Console.WriteLine(picross);
-								}
-								// Case: Filled not possible, must be X
-								else if(!tryFill2 && tryX2) {
-									picross.Put(i, j, PicrossGrid.X);
-									stuck = false;
-									Console.WriteLine(picross);
-								}
-								// Else Case: Both options are possible, cannot deduce
-							}
-						}
-					}
-				}
-			} while(!stuck && !picross.IsValid());
-			if(stuck) {
-				return false;
-			}
-			return true;
-		}
-
 
 		static bool Check2(PicrossGrid picross, int val, int row, int col, bool checkRow) {
 			if(picross.At(row, col) == PicrossGrid.EMPTY) {
@@ -358,7 +292,6 @@ namespace Picross {
 				return Verify(picross, row, col) && Solve2(picross, nextRow, nextCol);
 			}
 		}
-
 
 		static bool Verify(PicrossGrid picross, int row, int col) {
 			return VerifyRow(picross, row, col) && VerifyCol(picross, col, row);
