@@ -1,29 +1,43 @@
 using System;
 using System.IO;
+using System.Diagnostics;
 
 namespace Picross {
 	class Program {
 		static void Main(string[] args) {
-			Console.WriteLine("Solve Version?");
-			int solveVersion = int.Parse(Console.ReadLine());
-			PicrossGrid game = new PicrossGrid(0);
-			ReadPuzzle(ref game);
-			bool result = false;
-			switch(solveVersion) {
-				case 1:
-					result = Solve1(game, Check);
-					break;
-				case 2:
-					result = Solve2(game, 0, 0);
-					break;
-				case 3:
-					result = Solve1(game, Check2);
-					break;
-			}
-			if(result) {
-				Console.WriteLine(game);
-			} else {
-				Console.WriteLine("Couldn't Solve");
+			while(true) {
+				Console.WriteLine("Solve Version?");
+				int solveVersion = int.Parse(Console.ReadLine());
+				PicrossGrid game = new PicrossGrid(0);
+				Console.WriteLine("Show Progress? (y/n)");
+				bool showProgress = Char.ToUpper((char)Console.Read()) == 'Y';
+				Console.ReadLine();
+				ReadPuzzle(ref game);
+				bool result = false;
+				Stopwatch timer = new Stopwatch();
+				switch(solveVersion) {
+					case 1:
+						timer.Start();
+						result = Solve1(game, Check, showProgress);
+						timer.Stop();
+						break;
+					case 2:
+						timer.Start();
+						result = Solve2(game, 0, 0, showProgress);
+						timer.Stop();
+						break;
+					case 3:
+						timer.Start();
+						result = Solve1(game, Check2, showProgress);
+						timer.Stop();
+						break;
+				}
+				if(result) {
+					Console.WriteLine(game);
+					Console.WriteLine($"Puzzle solved in {timer.ElapsedMilliseconds} ms");
+				} else {
+					Console.WriteLine("Couldn't Solve");
+				}
 			}
 		}
 
@@ -77,14 +91,16 @@ namespace Picross {
 			}
 		}
 
-		static bool Solve1(PicrossGrid picross, Func<PicrossGrid, int, int, int, bool, bool> checkFunc) {
+		static bool Solve1(PicrossGrid picross, Func<PicrossGrid, int, int, int, bool, bool> checkFunc, bool showProgress) {
 			bool stuck;
 			do {
 				stuck = true;
 				for(int i = 0; i < picross.Size; i++) {
 					for(int j = 0; j < picross.Size; j++) {
 						if(picross.Empty(i, j)) {
-							Console.WriteLine($"{i}, {j}");
+							if(showProgress) {
+								Console.WriteLine($"{i}, {j}");
+							}
 							bool tryFill1 = checkFunc(picross, PicrossGrid.FILLED, i, j, true);
 							bool tryX1 = checkFunc(picross, PicrossGrid.X, i, j, true);
 							bool tryFill2;
@@ -98,13 +114,17 @@ namespace Picross {
 							else if(tryFill1 && !tryX1) {
 								picross.Put(i, j, PicrossGrid.FILLED);
 								stuck = false;
-								Console.WriteLine(picross);
+								if(showProgress) {
+									Console.WriteLine(picross);
+								}
 							}
 							// Case: Filled not possible, must be X
 							else if(!tryFill1 && tryX1) {
 								picross.Put(i, j, PicrossGrid.X);
 								stuck = false;
-								Console.WriteLine(picross);
+								if(showProgress) {
+									Console.WriteLine(picross);
+								}
 							} else {
 								// Check other dimension
 								tryFill2 = checkFunc(picross, PicrossGrid.FILLED, i, j, false);
@@ -118,13 +138,17 @@ namespace Picross {
 								else if(tryFill2 && !tryX2) {
 									picross.Put(i, j, PicrossGrid.FILLED);
 									stuck = false;
-									Console.WriteLine(picross);
+									if(showProgress) {
+										Console.WriteLine(picross);
+									}
 								}
 								// Case: Filled not possible, must be X
 								else if(!tryFill2 && tryX2) {
 									picross.Put(i, j, PicrossGrid.X);
 									stuck = false;
-									Console.WriteLine(picross);
+									if(showProgress) {
+										Console.WriteLine(picross);
+									}
 								}
 								// Else Case: Both options are possible, cannot deduce
 							}
@@ -265,7 +289,7 @@ namespace Picross {
 			return sum;
 		}
 
-		static bool Solve2(PicrossGrid picross, int row, int col) {
+		static bool Solve2(PicrossGrid picross, int row, int col, bool showProgress) {
 			if(row >= picross.Size) {
 				return true;
 			}
@@ -273,23 +297,24 @@ namespace Picross {
 			int nextRow = (col + 1 == picross.Size) ? row + 1 : row;
 			int nextCol = (col + 1) % picross.Size;
 			if(picross.Empty(row, col)) {
-				Console.WriteLine(picross);
-				//Console.ReadKey();
+				if(showProgress) {
+					Console.WriteLine(picross);
+				}
 
 				picross.Put(row, col, PicrossGrid.FILLED);
-				if(Verify(picross, row, col) && Solve2(picross, nextRow, nextCol)) {
+				if(Verify(picross, row, col) && Solve2(picross, nextRow, nextCol, showProgress)) {
 					return true;
 				}
 
 				picross.Clear(row, col);
 				picross.Put(row, col, PicrossGrid.X);
-				if(Verify(picross, row, col) && Solve2(picross, nextRow, nextCol)) {
+				if(Verify(picross, row, col) && Solve2(picross, nextRow, nextCol, showProgress)) {
 					return true;
 				}
 				picross.Clear(row, col);
 				return false;
 			} else {
-				return Verify(picross, row, col) && Solve2(picross, nextRow, nextCol);
+				return Verify(picross, row, col) && Solve2(picross, nextRow, nextCol, showProgress);
 			}
 		}
 
