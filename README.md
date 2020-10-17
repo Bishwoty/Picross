@@ -3,7 +3,7 @@ This program can solve picross puzzles (also known as nonograms). There are 3 al
 
 ### Inputing Puzzles
 Puzzles are inputed via text files. File paths are relative to the Desktop.<br>
-Some sample puzzles are [here](./Sample_Puzzles).<br>
+Some sample puzzles are [here](./Sample%20Puzzles).<br>
 
 #### File Format
 Valid puzzle files must be formatted in the following way:<br>
@@ -14,4 +14,4 @@ Optionaly, the next n lines can contain a partial solution for the puzzle. Symbo
 - Use `X` for an unfilled cell.
 - Use ` ` (space) for an unknown cell.
 
-See [sample puzzles](./Sample_Puzzles) for examples.
+See [sample puzzles](./Sample%20Puzzles) for examples.
