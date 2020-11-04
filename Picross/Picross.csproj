@@ -45,6 +45,7 @@
     <Compile Include="BruteForce.cs" />
     <Compile Include="LineSolve2.cs" />
     <Compile Include="IPicrossSolver.cs" />
+    <Compile Include="LineSolveOptimize.cs" />
     <Compile Include="PicrossGrid.cs" />
     <Compile Include="PicrossUtilities.cs" />
     <Compile Include="Program.cs" />

@@ -1,14 +1,29 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Picross {
-	class LineSolve : IPicrossSolver {
-		public virtual bool Solve(PicrossGrid picross, bool showProgress) {
+	class LineSolveOptimize : LineSolve2 {
+		public override bool Solve(PicrossGrid picross, bool showProgress) {
+			checkNext = new bool[2 * picross.Size];
+			for(int i = 0; i < checkNext.Length; i++) {
+				// Check every cell on first pass
+				checkNext[i] = true;
+			}
+
 			bool stuck;
 			do {
+				// If a cell's row and column did not recieve any updates in the last pass,
+				// it will not be checked this time.
+				checkThese = checkNext;
+				checkNext = new bool[2 * picross.Size];
+				ResetCheckTable();
 				stuck = true;
 				for(int i = 0; i < picross.Size; i++) {
 					for(int j = 0; j < picross.Size; j++) {
-						if(picross.Empty(i, j)) {
+						if(picross.Empty(i, j) && (checkThese[i] || checkThese[picross.Size + j])) {
 							if(showProgress) {
 								Console.WriteLine($"{i}, {j}");
 							}
@@ -25,6 +40,8 @@ namespace Picross {
 							else if(tryFill1 && !tryX1) {
 								picross.Put(i, j, PicrossGrid.FILLED);
 								stuck = false;
+								checkNext[i] = true;
+								checkNext[picross.Size + j] = true;
 								if(showProgress) {
 									Console.WriteLine(picross);
 								}
@@ -33,6 +50,8 @@ namespace Picross {
 							else if(!tryFill1 && tryX1) {
 								picross.Put(i, j, PicrossGrid.X);
 								stuck = false;
+								checkNext[i] = true;
+								checkNext[picross.Size + j] = true;
 								if(showProgress) {
 									Console.WriteLine(picross);
 								}
@@ -49,6 +68,8 @@ namespace Picross {
 								else if(tryFill2 && !tryX2) {
 									picross.Put(i, j, PicrossGrid.FILLED);
 									stuck = false;
+									checkNext[i] = true;
+									checkNext[picross.Size + j] = true;
 									if(showProgress) {
 										Console.WriteLine(picross);
 									}
@@ -57,6 +78,8 @@ namespace Picross {
 								else if(!tryFill2 && tryX2) {
 									picross.Put(i, j, PicrossGrid.X);
 									stuck = false;
+									checkNext[i] = true;
+									checkNext[picross.Size + j] = true;
 									if(showProgress) {
 										Console.WriteLine(picross);
 									}
@@ -70,52 +93,14 @@ namespace Picross {
 			return !stuck;
 		}
 
-		protected virtual bool Check(PicrossGrid picross, int val, int row, int col, bool checkRow) {
-			if(picross.At(row, col) == PicrossGrid.EMPTY) {
-				picross.Put(row, col, val);
-
-				//Console.WriteLine(picross);
-
-
-				// Checks to reduce recursion
-				int targetFill = PicrossUtilities.InstructionSum(picross, checkRow ? row : picross.Size + col);
-				int currentFill = PicrossUtilities.LineSum(picross, checkRow ? row : picross.Size + col, PicrossGrid.FILLED);
-				int currentX = PicrossUtilities.LineSum(picross, checkRow ? row : picross.Size + col, PicrossGrid.X);
-				if(currentFill > targetFill || currentX > picross.Size - targetFill) {
-					picross.Clear(row, col);
-					return false;
-				}
-
-				int nextRow;
-				int nextCol;
-				bool result;
-				for(int i = 0; i < picross.Size; i++) {
-					if(picross.At(checkRow ? row : i, checkRow ? i : col) == PicrossGrid.EMPTY) {
-
-						nextRow = checkRow ? row : i;
-						nextCol = checkRow ? i : col;
-
-						// Recurse
-						if(targetFill - currentFill > picross.Size - targetFill - currentX) {
-							result = Check(picross, PicrossGrid.FILLED, nextRow, nextCol, checkRow) || Check(picross, PicrossGrid.X, nextRow, nextCol, checkRow);
-						} else {
-							result = Check(picross, PicrossGrid.X, nextRow, nextCol, checkRow) || Check(picross, PicrossGrid.FILLED, nextRow, nextCol, checkRow);
-						}
-
-						picross.Clear(row, col);
-						return result;
-					}
-				}
-
-				// Filled row/column, check if valid
-				result = picross.IsValid(checkRow, checkRow ? row : col);
-
-				picross.Clear(row, col);
-				return result;
-
-			} else {
-				throw new System.ArgumentException("Check on non empty cell");
+		private void ResetCheckTable() {
+			for(int i = 0; i < checkNext.Length; i++) {
+				checkNext[i] = false;
 			}
 		}
+
+		private bool[] checkThese;
+		private bool[] checkNext;
+
 	}
 }

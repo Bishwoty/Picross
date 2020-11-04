@@ -23,6 +23,9 @@ namespace Picross {
 						case 3:
 							solver = new LineSolve2();
 							break;
+						case 4:
+							solver = new LineSolveOptimize();
+							break;
 						default:
 							valid = false;
 							Console.WriteLine("Invalid Solve Version.");
